@@ -46,7 +46,9 @@ function buildArm(){
 	parseArgs $@
 	mkdir -p arm-build
 	pushd arm-build
-	rm -fr *
+	if [ "$clean" == "true" ]; then
+		rm -fr *
+	fi
 
 	echo "ac_cv_file__dev_ptmx=no
 	ac_cv_file__dev_ptc=no
