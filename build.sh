@@ -8,7 +8,6 @@ set -e
 #globals:
 PROJECT_DIR=$(pwd)
 SDK_DIR=/opt/usr_data/sdk
-SHA="$(sudo git config --global --add safe.directory $PROJECT_DIR;sudo git rev-parse --verify --short HEAD)"
 
 function parseArgs()
 {
@@ -71,65 +70,56 @@ function buildArm(){
 
 function stripArchive()
 {
-	local strip="${SDK_DIR}/sysroots/x86_64-fslcsdk-linux/usr/bin/aarch64-fslc-linux/aarch64-fslc-linux-strip"
+	if [ "${target}" == "arm" ]; then 
+		local strip="${SDK_DIR}/sysroots/x86_64-fslcsdk-linux/usr/bin/aarch64-fslc-linux/aarch64-fslc-linux-strip"
+	else
+		local strip=$(which strip)
+	fi
 	find . -name "*.a" -exec $strip --strip-debug --strip-unneeded -p {} \;
 	find . -name "*.so*" -exec $strip --strip-all -p {} \;
 }
 
 function package(){
+	local target=""
 	parseArgs $@
-	local workdir=installs
-	mkdir -p $workdir
+	local installdir="${target}-installs/installs"
+	mkdir -p "${installdir}"
+	rm -fr "${installdir}/*"
 
-	cp -r $PROJECT_DIR/Include $workdir/
-	cp -r $PROJECT_DIR/Lib $workdir/
+	rsync -uav $PROJECT_DIR/Include "${installdir}/include"
+	rsync -uav $PROJECT_DIR/Lib "${installdir}/"
+	find "${installdir}/Lib" -name __pycache__ -type d -exec rm -fr {} \; || true
+	rm -fr "${installdir}/Lib/test"
 
-	mkdir -p $workdir/arm-build
-	cp arm-build/pyconfig.h $workdir/arm-build/
-	#cp arm-build/libpython3.12.a $workdir/arm-build/
-	find arm-build/Modules/ -name "*.so*" -exec cp {} $workdir/arm-build/ \;
+	mkdir -p "${installdir}/lib"
+	cp ${target}-build/pyconfig.h "${installdir}/lib/"
+#	cp ${target}-build/libpython3.12.a "${installdir}/lib/"
+	find ${target}-build/Modules/ -name "*.so*" -exec cp {} "${installdir}/lib/" \;
 	# copy dynamic libraries
-	cp arm-build/libpython3.so $workdir/arm-build/
-	cp arm-build/libpython3.12.so.1.0 $workdir/arm-build/
-	pushd $workdir/arm-build/
+	cp ${target}-build/libpython3.so "${installdir}/lib/"
+	cp ${target}-build/libpython3.12.so.1.0 "${installdir}/lib/"
+	pushd "${installdir}/lib/"
 	ln -sf libpython3.12.so.1.0 libpython3.12.so
-	popd
-	
-	pushd $workdir/arm-build/
-	stripArchive
-	popd
-
-	mkdir -p $workdir/x86-build
-	cp x86-build/pyconfig.h $workdir/x86-build/
-	cp x86-build/libpython3.12.a $workdir/x86-build/
-	find x86-build/Modules/ -name "*.so*" -exec cp {} $workdir/x86-build/ \;
-	#copy dynamic libraries 
-	cp x86-build/libpython3.so $workdir/x86-build/
-	cp x86-build/libpython3.12.so.1.0 $workdir/x86-build/
-	pushd $workdir/x86-build/
-	ln -sf libpython3.12.so.1.0 libpython3.12.so
-	popd
-
-	tar -cvJf cpython.$SHA.tar.xz $workdir
-	
-	#rm -fr $workdir
-	sudo mkdir -p $PROJECT_DIR/out
-	echo "Build folder is $(pwd)"
-	sudo mv $(pwd)/cpython.$SHA.tar.xz $PROJECT_DIR/out/
-	echo "Package is built at $PROJECT_DIR/out/cpython.$SHA.tar.xz"
+	stripArchive target=${target}
+	cd ../../
+	local SHA="$(sudo git config --global --add safe.directory $PROJECT_DIR;sudo git rev-parse --verify --short HEAD)"
+	local output="cpython-$SHA-${target}.tar.xz"
+	echo "Package is built at $(pwd)/${output}"
+	tar -cvJf "${output}" installs
 	if [ -d /home/$USER/Downloads ]; then
-	   sudo cp -f $PROJECT_DIR/out/cpython.$SHA.tar.xz /home/$USER/Downloads/
-	   echo "Package is availabled at /home/$USER/Downloads/cpython.$SHA.tar.xz"
+	   sudo cp -f "${output}" /home/$USER/Downloads/
+	   echo "Package is availabled at /home/$USER/Downloads/${output}"
 	fi
-	
+	popd
 }
 
 function main(){
 	parseArgs $@
 	pushBuildDir
 	buildX86
+	package target="x86"
 	buildArm
-	package
+	package target="arm"
 	popBuildDir
 }
 
