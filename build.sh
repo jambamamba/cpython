@@ -1,5 +1,5 @@
-#!/bin/bash -e
-set -e
+#!/bin/bash -ex
+set -ex
 
 #git clone https://github.com/python/cpython.git
 #git checkout v3.12.0a2
@@ -86,7 +86,13 @@ function package(){
 	mkdir -p "${installdir}"
 	rm -fr "${installdir}/*"
 
-	rsync -uav $PROJECT_DIR/Include "${installdir}/include"
+	mkdir -p "${installdir}/include"
+	if [ -d "$PROJECT_DIR/Include" ]; then
+		rsync -uav $PROJECT_DIR/Include/* "${installdir}/include/"
+	fi
+	if [ -d "$PROJECT_DIR/include" ]; then
+		rsync -uav $PROJECT_DIR/include/* "${installdir}/include/"
+	fi
 	rsync -uav $PROJECT_DIR/Lib "${installdir}/"
 	find "${installdir}/Lib" -name __pycache__ -type d -exec rm -fr {} \; || true
 	rm -fr "${installdir}/Lib/test"
@@ -116,7 +122,7 @@ function package(){
 function main(){
 	parseArgs $@
 	pushBuildDir
-	buildX86
+#	buildX86
 	package target="x86"
 	buildArm
 	package target="arm"
