@@ -53,7 +53,7 @@ function buildArm(){
 	ac_cv_file__dev_ptc=no
 	">config.site
 
-	source ${SDK_DIR}/environment-setup-aarch64-fslc-linux
+	source ${SDK_DIR}/environment-setup-cortexa72-oe-linux
 	export CONFIG_SITE=./config.site
 	export PYTHONPATH=../Lib/site-packages
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../x86-build #:/opt/usr_data/sdk/sysroots/x86_64-fslcsdk-linux/lib/
