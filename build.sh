@@ -122,7 +122,7 @@ function package(){
 function main(){
 	parseArgs $@
 	pushBuildDir
-#	buildX86
+	buildX86
 	package target="x86"
 	buildArm
 	package target="arm"
