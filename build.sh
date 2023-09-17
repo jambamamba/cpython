@@ -112,9 +112,9 @@ function package(){
 	local output="cpython-$SHA-${target}.tar.xz"
 	echo "Package is built at $(pwd)/${output}"
 	tar -cvJf "${output}" installs
-	if [ -d /home/$USER/Downloads ]; then
-	   sudo cp -f "${output}" /home/$USER/Downloads/
-	   echo "Package is availabled at /home/$USER/Downloads/${output}"
+	if [ -d /home/$USER/downloads ]; then
+	   sudo cp -f "${output}" /home/$USER/downloads/
+	   echo "Package is availabled at /home/$USER/downloads/${output}"
 	fi
 	popd
 }
