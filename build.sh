@@ -111,11 +111,13 @@ function package(){
 	local SHA="$(sudo git config --global --add safe.directory $PROJECT_DIR;sudo git rev-parse --verify --short HEAD)"
 	local output="cpython-$SHA-${target}.tar.xz"
 	echo "Package is built at $(pwd)/${output}"
-	tar -cvJf "${output}" installs
+	pushd installs
+	tar -cvJf "${output}" *
 	if [ -d /home/$USER/downloads ]; then
 	   sudo cp -f "${output}" /home/$USER/downloads/
 	   echo "Package is availabled at /home/$USER/downloads/${output}"
 	fi
+	popd
 	popd
 }
 
